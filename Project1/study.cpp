@@ -13,7 +13,7 @@ class Lock_Queue {
 	queue<int> q;
 	mutex ql;
 public:
-	void Enqueue(int x) {
+	void Enqueue(const int& x) {
 		ql.lock();
 		q.push(x);
 		ql.unlock();
@@ -47,14 +47,12 @@ public:
 class Concurrent_Queue {
 	concurrency::concurrent_queue<int> q;
 public:
-	void Enqueue(int x) {
+	void Enqueue(const int& x) {
 		q.push(x);
 	}
 	int Dequeue() {
 		int val;
-		bool succ;
-		succ = q.try_pop(val);
-		if (succ)
+		if(q.try_pop(val))
 			return val;
 		else
 			return -1;
@@ -89,10 +87,6 @@ public:
 	{
 		head = tail = new NODE{ -1 };
 	}
-	void Clear()
-	{
-		while (-1 != Dequeue());
-	}
 	bool CAS(NODE* volatile* ptr, NODE* old_ptr, NODE* new_ptr)
 	{
 		return std::atomic_compare_exchange_strong(
@@ -101,7 +95,7 @@ public:
 			reinterpret_cast<long long>(new_ptr)
 		);
 	}
-	void Enqueue(int x)
+	void Enqueue(const int& x)
 	{
 		NODE* n = new NODE(x);
 		while (true) {
@@ -136,6 +130,10 @@ public:
 			return value;
 		}
 	}
+	void Clear()
+	{
+		while (-1 != Dequeue());
+	}
 	void Print20()
 	{
 		for (int i = 0; i < 20; ++i) {
@@ -151,7 +149,7 @@ LF_QUEUE my_queue;
 
 thread_local int thread_id;
 
-const int NUM_TEST = 4'000'000;
+const int NUM_TEST = 10'000'000;
 
 std::atomic_int loop_count = NUM_TEST;
 
@@ -161,7 +159,7 @@ void benchmark(const int th_id, const int num_thread)
 
 	thread_id = th_id;
 	while (loop_count-- > 0) {
-		if (rand() % 2 == 0)
+		if (rand() % 5 != 0)
 			my_queue.Enqueue(key++);
 		else
 			my_queue.Dequeue();
